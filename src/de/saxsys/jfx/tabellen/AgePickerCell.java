@@ -7,7 +7,6 @@ import javafx.application.Platform;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableCell;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 public class AgePickerCell<Inputs> extends TableCell<Inputs, LocalDate> {
@@ -17,12 +16,18 @@ public class AgePickerCell<Inputs> extends TableCell<Inputs, LocalDate> {
 	public AgePickerCell() {
 
 		datePicker.addEventFilter(KeyEvent.KEY_PRESSED, t -> {
-			if (t.getCode() == KeyCode.ENTER) {
+			switch (t.getCode()) {
+			case ENTER:
 				cancelEdit();
-			} else if (t.getCode() == KeyCode.ESCAPE) {
+				break;
+			case ESCAPE:
 				cancelEdit();
-			} else if (t.getCode() == KeyCode.TAB) {
+				break;
+			case TAB:
 				cancelEdit();
+				break;
+			default:
+				break;
 			}
 		});
 
@@ -49,7 +54,6 @@ public class AgePickerCell<Inputs> extends TableCell<Inputs, LocalDate> {
 
 	@Override
 	public void commitEdit(LocalDate newValue) {
-		System.out.println("---------->" + newValue);
 		super.commitEdit(newValue);
 	}
 
