@@ -1,5 +1,10 @@
 package de.saxsys.jfx.tabellen;
 
+import java.time.LocalDate;
+
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.transformation.FilteredList;
+import javafx.scene.control.Pagination;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -13,6 +18,7 @@ import com.google.inject.Inject;
 import de.saxsys.jfx.tabellen.model.Person;
 import de.saxsys.jfx.tabellen.model.Town;
 
+//TODO report bug reorder solvency
 public class PersonTable extends TableView<Person> {
 
 	private static final String DEFAULT_FILL = "";
@@ -20,7 +26,7 @@ public class PersonTable extends TableView<Person> {
 	private final TownService townService;
 
 	private final TableColumn<Person, String> lastNameCol = new TableColumn<>("Last Name");
-	private final TableColumn<Person, Integer> ageCol = new TableColumn<>("Age");
+	private final TableColumn<Person, LocalDate> ageCol = new TableColumn<>("Age");
 	private final TableColumn<Person, String> firstNameCol = new TableColumn<>("First Name");
 
 	private final TableColumn<Person, Town> townCol = new TableColumn<>("Town");
@@ -28,10 +34,10 @@ public class PersonTable extends TableView<Person> {
 	private final TableColumn<Person, Town> townZipCode = new TableColumn<>("Zip Code");
 
 	private final TableColumn<Person, Double> solvencyCol = new TableColumn<>("Solvency");
+	private FilteredList<Person> virtualizedPersons;
 
 	@Inject
 	public PersonTable(PersonService personsService, TownService townsService) {
-
 		this.personsService = personsService;
 		this.townService = townsService;
 
@@ -44,8 +50,31 @@ public class PersonTable extends TableView<Person> {
 		initTownZipCol();
 		initSolvencyCol();
 
-		initColumns();
+		addColumns();
 		System.out.println("Table Init Done");
+
+		// Size of Table to parent
+		setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+		// Loading of big data
+		initPagination();
+
+	}
+
+	private void initPagination() {
+		int itemCount = 10;
+		final Pagination pagination = new Pagination(personsService.getPersons().getValue().size() / itemCount);
+
+		virtualizedPersons = personsService.getPersons().filtered(t -> {
+			int indexOf = personsService.getPersons().indexOf(t);
+			int currentItemCount = pagination.getCurrentPageIndex() * itemCount;
+			if (indexOf > currentItemCount && indexOf < currentItemCount + itemCount)
+				return true;
+			else
+				return false;
+		});
+
+		itemsProperty().bind(new SimpleListProperty<>(virtualizedPersons));
 	}
 
 	private void initFirstNameCol() {
@@ -59,7 +88,12 @@ public class PersonTable extends TableView<Person> {
 	}
 
 	private void initAgeCol() {
-		ageCol.setCellValueFactory(new PropertyValueFactory<Person, Integer>("age"));
+		ageCol.setCellValueFactory(new PropertyValueFactory<Person, LocalDate>("birth"));
+		ageCol.setCellFactory(c -> new AgePickerCell<>());
+		ageCol.setOnEditCommit(e -> {
+			System.out.println(e.getTableView());
+			e.getTableView().getItems().get(e.getTablePosition().getRow()).setBirth(e.getNewValue());
+		});
 	}
 
 	private void initTownZipCol() {
@@ -113,7 +147,7 @@ public class PersonTable extends TableView<Person> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void initColumns() {
+	private void addColumns() {
 
 		// Combine Townname and Zip to Town
 		townCol.getColumns().addAll(townName, townZipCode);
@@ -121,6 +155,6 @@ public class PersonTable extends TableView<Person> {
 		// Add Major colums
 		getColumns().addAll(firstNameCol, lastNameCol, ageCol, townCol, solvencyCol);
 
-		itemsProperty().bind(personsService.getPersons());
+		itemsProperty().bind(new SimpleListProperty<>(personsService.getPersons()));
 	}
 }

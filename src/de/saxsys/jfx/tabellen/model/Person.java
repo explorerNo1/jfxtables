@@ -1,50 +1,42 @@
 package de.saxsys.jfx.tabellen.model;
 
+import java.time.LocalDate;
 import java.util.Random;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.util.Duration;
 
 public class Person {
 
+	private static final long SOLVENCY_UPDATE_RATE = 3000L;
 	private final StringProperty firstname = new SimpleStringProperty();
 	private final StringProperty lastname = new SimpleStringProperty();
 
-	private final IntegerProperty age = new SimpleIntegerProperty();
+	private final ObjectProperty<LocalDate> birth = new SimpleObjectProperty<>();
 	private final SimpleObjectProperty<Town> town = new SimpleObjectProperty<>();
 
 	private final DoubleProperty solvency = new SimpleDoubleProperty();
 
 	public Person() {
-		town.addListener((observable, oldValue, newValue) -> {
-			if (newValue != null)
-				System.out.println("Town Changed for " + firstname.get() + " " + newValue.getName());
-		});
-		firstname.addListener((observable, oldValue, newValue) -> System.out.println("New firstname: "
-				+ firstname.get()));
-		lastname.addListener((observable, oldValue, newValue) -> System.out.println("New lastname: " + lastname.get()));
-
 		fakeSolvencyProgress();
 	}
 
 	private void fakeSolvencyProgress() {
-		Timeline timeline = new Timeline();
-		KeyFrame target = new KeyFrame(Duration.seconds(new Random().nextInt(5) + 5), new KeyValue(solvency,
-				new Random().nextDouble()));
-		timeline.getKeyFrames().add(target);
-		timeline.setAutoReverse(true);
-		timeline.setCycleCount(2);
-		timeline.play();
-		timeline.setOnFinished(e -> fakeSolvencyProgress());
+		new Thread(() -> {
+			try {
+				Thread.sleep(SOLVENCY_UPDATE_RATE - new Random().nextInt((int) SOLVENCY_UPDATE_RATE / 2));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			Platform.runLater(() -> solvency.set(new Random().nextDouble()));
+			fakeSolvencyProgress();
+		}).start();
+
 	}
 
 	public String getFirstname() {
@@ -55,8 +47,8 @@ public class Person {
 		return this.lastname.get();
 	}
 
-	public int getAge() {
-		return this.age.get();
+	public LocalDate getBirth() {
+		return this.birth.get();
 	}
 
 	public Town getTown() {
@@ -71,8 +63,8 @@ public class Person {
 		this.lastname.set(lastname);
 	}
 
-	public void setAge(int age) {
-		this.age.set(age);
+	public void setBirth(LocalDate birth) {
+		this.birth.set(birth);
 	}
 
 	public void setTown(Town town) {
@@ -99,8 +91,8 @@ public class Person {
 		return solvency;
 	}
 
-	public IntegerProperty ageProperty() {
-		return age;
+	public ObjectProperty<LocalDate> birthProperty() {
+		return birth;
 	}
 
 	public SimpleObjectProperty<Town> townProperty() {

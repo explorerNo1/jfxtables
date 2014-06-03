@@ -22,11 +22,7 @@ public class Starter extends MvvmfxGuiceApplication {
 	@Override
 	public void startMvvmfx(Stage stage) throws Exception {
 
-		Scene scene = new Scene(table, 300, 500);
-
-		table.setMinWidth(Double.MAX_VALUE);
-		table.setMaxWidth(Double.MAX_VALUE);
-		table.setPrefWidth(Double.MAX_VALUE);
+		Scene scene = new Scene(table);
 
 		stage.setScene(scene);
 		stage.show();
